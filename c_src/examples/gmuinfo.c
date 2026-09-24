@@ -26,6 +26,10 @@ void gmu_main(void)
     gmu_newline();
     gmu_print("Base system : MikeOS 4.7.0");
     gmu_newline();
+    gmu_print("USN : U25E01CS113");
+    gmu_newline();
+    gmu_print("Name: : Rishikesh N");
+    gmu_newline();
     gmu_print("Program     : Written in C");
     gmu_newline();
     gmu_print("Load offset : 0x8000");
