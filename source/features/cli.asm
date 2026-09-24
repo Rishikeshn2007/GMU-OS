@@ -64,6 +64,10 @@ get_cmd:				; Main processing loop
 	call os_string_compare
 	jc near print_help
 
+	mov di, about_string		; 'ABOUT' entered?
+	call os_string_compare
+	jc near print_about
+
 	mov di, cls_string		; 'CLS' entered?
 	call os_string_compare
 	jc near clear_screen
@@ -242,6 +246,14 @@ no_kernel_allowed:
 
 print_help:
 	mov si, help_text
+	call os_print_string
+	jmp get_cmd
+
+
+; ------------------------------------------------------------------
+
+print_about:
+	mov si, about_text
 	call os_print_string
 	jmp get_cmd
 
@@ -968,6 +980,7 @@ exit:
 				db 'SIZE        Display a file size', 13, 10
 				db 'CLS         Clear the screen', 13, 10
 				db 'HELP        Display this command reference', 13, 10
+				db 'ABOUT       Display GMU-OS project information', 13, 10
 				db 'TIME        Display the current time', 13, 10
 				db 'DATE        Display the current date', 13, 10
 				db 'VER         Display the GMU-OS version', 13, 10
@@ -983,6 +996,7 @@ exit:
 
 	exit_string		db 'EXIT', 0
 	help_string		db 'HELP', 0
+	about_string		db 'ABOUT', 0
 	cls_string		db 'CLS', 0
 	dir_string		db 'DIR', 0
 	time_string		db 'TIME', 0
@@ -994,6 +1008,14 @@ exit:
 	copy_string		db 'COPY', 0
 	size_string		db 'SIZE', 0
 	list_string		db 'LS', 0
+
+	about_text	db '====================', 13, 10
+				db '       GMU-OS', 13, 10
+				db '====================', 13, 10
+				db 'Version:      ', MIKEOS_VER, 13, 10
+				db 'Built on top of MIKE OS', 13, 10
+				db 'Language: assembly', 13, 10
+				db '====================', 13, 10,0
 
 	kern_file_string	db 'KERNEL', 0
 	kern_warn_msg		db 'Cannot execute kernel file!', 13, 10, 0
