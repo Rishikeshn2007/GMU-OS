@@ -15,6 +15,7 @@ cd "$ROOT"
 mkdir -p tmp-gmu-loop
 mount -o loop -t vfat disk_images/mikeos.flp tmp-gmu-loop
 cp gmu_docs/GMU_OS.TXT tmp-gmu-loop/GMU_OS.TXT
+cp programs/*.BIN tmp-gmu-loop/
 umount tmp-gmu-loop
 rmdir tmp-gmu-loop
 cp disk_images/mikeos.flp disk_images/gmuos.flp

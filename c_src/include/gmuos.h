@@ -65,6 +65,48 @@ static inline void gmu_clear(void)
     );
 }
 
+/* Vector 0x0054: write the current OS time into a caller buffer. */
+static inline void gmu_get_time(char *buffer)
+{
+    gmu_u16 off = gmu_offset(buffer);
+    __asm__ volatile (
+        "movw %0, %%bx\n\t"
+        "movw $0x0054, %%ax\n\t"
+        "callw *%%ax"
+        :
+        : "rm" (off)
+        : "ax", "bx", "cx", "dx", "si", "di", "cc", "memory"
+    );
+}
+
+/* Vector 0x005D: write the current OS date into a caller buffer. */
+static inline void gmu_get_date(char *buffer)
+{
+    gmu_u16 off = gmu_offset(buffer);
+    __asm__ volatile (
+        "movw %0, %%bx\n\t"
+        "movw $0x005d, %%ax\n\t"
+        "callw *%%ax"
+        :
+        : "rm" (off)
+        : "ax", "bx", "cx", "dx", "si", "di", "cc", "memory"
+    );
+}
+
+/* Vector 0x0057: return the OS API version from AL. */
+static inline gmu_u16 gmu_get_api_version(void)
+{
+    gmu_u16 version;
+    __asm__ volatile (
+        "movw $0x0057, %%bx\n\t"
+        "callw *%%bx"
+        : "=a" (version)
+        :
+        : "bx", "cx", "dx", "si", "di", "cc", "memory"
+    );
+    return version & 0x00FFu;
+}
+
 static inline gmu_u16 gmu_wait_key(void)
 {
     gmu_u16 key;
