@@ -1,0 +1,5 @@
+GMU OS - C-Oriented Learning Edition 0.1
+GM University, Davanagere, Karnataka
+UE25CS2304 Operating System with Practice
+Derived for education from MikeOS 4.7.0.
+Original MikeOS copyright and license retained.

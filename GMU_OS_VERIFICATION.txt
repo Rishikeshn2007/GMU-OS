@@ -1,0 +1,9 @@
+GMU OS 0.1 package verification
+================================
+Files: 97
+GMUINFO.BIN size: 548 bytes
+gmuos.flp size: 1474560 bytes
+Boot signature: 55aa (expected 55aa)
+Contains GMU OS branding: True
+Contains MikeOS attribution files: True
+C source compile tested in this environment with gcc -m16 + ld -m elf_i386.
