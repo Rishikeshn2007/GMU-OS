@@ -186,7 +186,7 @@ no_autorun_bin:
 option_screen:
 	mov ax, os_init_msg		; Set up the welcome screen
 	mov bx, os_version_msg
-	mov cx, 10011111b		; Colour: white text on light blue
+	mov cx, 11100000b		; Colour: black text on bright yellow/gold
 	call os_draw_background
 
 	mov ax, dialog_string_1		; Ask if user wants app selector or command-line
@@ -218,7 +218,7 @@ option_screen:
 app_selector:
 	mov ax, os_init_msg		; Draw main screen layout
 	mov bx, os_version_msg
-	mov cx, 10011111b		; Colour: white text on light blue
+	mov cx, 11100000b		; Colour: black text on bright yellow/gold
 	call os_draw_background
 
 	call os_file_selector		; Get user to select a file, and store
