@@ -23,12 +23,15 @@ typedef unsigned int   gmu_u32;
 #define GMU_OS_CLEAR_SCREEN   0x0009u
 #define GMU_OS_PRINT_NEWLINE  0x000Fu
 #define GMU_OS_WAIT_FOR_KEY   0x0012u
+#define GMU_OS_SPEAKER_TONE   0x001Bu
+#define GMU_OS_SPEAKER_OFF    0x001Eu
 #define GMU_OS_GET_API_VER    0x0057u
 #define GMU_OS_GET_TIME_STR   0x0054u
 #define GMU_OS_GET_DATE_STR   0x005Du
+#define GMU_OS_INPUT_STRING   0x0036u
 
-/* Convert a linked C pointer (programs are linked at 0x8000) to the
- * 16-bit offset used inside the common MikeOS/GMU OS segment. */
+/* Convert a linked program-data pointer to the 16-bit offset used inside
+ * the common MikeOS/GMU OS segment. Stack pointers use a different segment. */
 static inline gmu_u16 gmu_offset(const void *p)
 {
     return (gmu_u16)((gmu_u32)p & 0xFFFFu);
@@ -76,6 +79,42 @@ static inline gmu_u16 gmu_wait_key(void)
         : "bx", "cx", "dx", "si", "di", "cc", "memory"
     );
     return key;
+}
+
+static inline void gmu_input_string(char *buffer, gmu_u16 max_length)
+{
+    gmu_u16 offset = gmu_offset(buffer);
+    __asm__ volatile (
+        "movw %0, %%ax\n\t"
+        "movw %1, %%bx\n\t"
+        "movw $0x0036, %%di\n\t"
+        "callw *%%di"
+        :
+        : "rm" (offset), "rm" (max_length)
+        : "ax", "bx", "cx", "dx", "si", "di", "cc", "memory"
+    );
+}
+
+static inline void gmu_speaker_tone(gmu_u16 frequency)
+{
+    __asm__ volatile (
+        "movw $0x001B, %%di\n\t"
+        "callw *%%di"
+        :
+        : "a" (frequency)
+        : "bx", "cx", "dx", "si", "di", "cc", "memory"
+    );
+}
+
+static inline void gmu_speaker_off(void)
+{
+    __asm__ volatile (
+        "movw $0x001E, %%di\n\t"
+        "callw *%%di"
+        :
+        :
+        : "ax", "bx", "cx", "dx", "si", "di", "cc", "memory"
+    );
 }
 
 /* C program entry helper.
