@@ -55,6 +55,108 @@ get_cmd:				; Main processing loop
 	call os_string_uppercase
 
 	mov si, input
+	mov ax, input
+	call os_string_length
+	cmp ax, 2
+	jb near .normal_dispatch
+	mov si, input
+	add si, ax
+	cmp byte [si-1], '?'
+	jne near .normal_dispatch
+	cmp byte [si-2], '/'
+	jne near .normal_dispatch
+	mov byte [si-2], 0
+
+	mov si, input
+	mov di, dir_string
+	call os_string_compare
+	jc .dir_help
+	mov di, list_string
+	call os_string_compare
+	jc .ls_help
+	mov di, copy_string
+	call os_string_compare
+	jc .copy_help
+	mov di, ren_string
+	call os_string_compare
+	jc .ren_help
+	mov di, del_string
+	call os_string_compare
+	jc .del_help
+	mov di, cat_string
+	call os_string_compare
+	jc .cat_help
+	mov di, size_string
+	call os_string_compare
+	jc .size_help
+	mov di, cls_string
+	call os_string_compare
+	jc .cls_help
+	mov di, help_string
+	call os_string_compare
+	jc .help_help
+	mov di, about_string
+	call os_string_compare
+	jc .about_help
+	mov di, time_string
+	call os_string_compare
+	jc .time_help
+	mov di, date_string
+	call os_string_compare
+	jc .date_help
+	mov di, ver_string
+	call os_string_compare
+	jc .ver_help
+	mov di, exit_string
+	call os_string_compare
+	jc .exit_help
+	jmp total_fail
+
+.dir_help:
+	mov si, dir_help_text
+	jmp print_command_help
+.ls_help:
+	mov si, ls_help_text
+	jmp print_command_help
+.copy_help:
+	mov si, copy_help_text
+	jmp print_command_help
+.ren_help:
+	mov si, ren_help_text
+	jmp print_command_help
+.del_help:
+	mov si, del_help_text
+	jmp print_command_help
+.cat_help:
+	mov si, cat_help_text
+	jmp print_command_help
+.size_help:
+	mov si, size_help_text
+	jmp print_command_help
+.cls_help:
+	mov si, cls_help_text
+	jmp print_command_help
+.help_help:
+	mov si, help_help_text
+	jmp print_command_help
+.about_help:
+	mov si, about_help_text
+	jmp print_command_help
+.time_help:
+	mov si, time_help_text
+	jmp print_command_help
+.date_help:
+	mov si, date_help_text
+	jmp print_command_help
+.ver_help:
+	mov si, ver_help_text
+	jmp print_command_help
+.exit_help:
+	mov si, exit_help_text
+	jmp print_command_help
+
+.normal_dispatch:
+	mov si, input
 
 	mov di, exit_string		; 'EXIT' entered?
 	call os_string_compare
@@ -246,6 +348,13 @@ no_kernel_allowed:
 
 print_help:
 	mov si, help_text
+	call os_print_string
+	jmp get_cmd
+
+
+; ------------------------------------------------------------------
+
+print_command_help:
 	call os_print_string
 	jmp get_cmd
 
@@ -1053,6 +1162,20 @@ exit:
 				db 'DATE          | Show the current date', 13, 10
 				db 'VER           | Show GMU-OS version', 13, 10
 				db 'EXIT          | Leave the command shell', 13, 10, 13, 10, 0
+	dir_help_text	db 'DIR: List files in directory', 13, 10, 'eg: DIR', 13, 10, 0
+	ls_help_text	db 'LS: List files in directory', 13, 10, 'eg: LS', 13, 10, 0
+	copy_help_text	db 'COPY: Copy a file', 13, 10, 'eg: COPY SOURCE.TXT DEST.TXT', 13, 10, 0
+	ren_help_text	db 'REN: Rename a file', 13, 10, 'eg: REN OLD.TXT NEW.TXT', 13, 10, 0
+	del_help_text	db 'DEL: Delete a file', 13, 10, 'eg: DEL OLD.TXT', 13, 10, 0
+	cat_help_text	db 'CAT: Display a text file', 13, 10, 'eg: CAT README.TXT', 13, 10, 0
+	size_help_text	db 'SIZE: Show file size', 13, 10, 'eg: SIZE README.TXT', 13, 10, 0
+	cls_help_text	db 'CLS: Clear the screen', 13, 10, 'eg: CLS', 13, 10, 0
+	help_help_text	db 'HELP: Show the command table', 13, 10, 'eg: HELP', 13, 10, 0
+	about_help_text	db 'ABOUT: Show GM University information', 13, 10, 'eg: ABOUT', 13, 10, 0
+	time_help_text	db 'TIME: Show the current time', 13, 10, 'eg: TIME', 13, 10, 0
+	date_help_text	db 'DATE: Show the current date', 13, 10, 'eg: DATE', 13, 10, 0
+	ver_help_text	db 'VER: Show GMU-OS version', 13, 10, 'eg: VER', 13, 10, 0
+	exit_help_text	db 'EXIT: Leave the command shell', 13, 10, 'eg: EXIT', 13, 10, 0
 	about_text	db 13, 10, 'GMU-OS', 13, 10, 13, 10
 				db 'Igniting Innovation, Inspiring Transformation ...', 13, 10, 13, 10
 				db 'Welcome to GMU-OS - A hub for Academic progress', 13, 10
