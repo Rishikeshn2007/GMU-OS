@@ -279,6 +279,74 @@ print_time:
 ; ------------------------------------------------------------------
 
 print_date:
+	mov si, [param_list]
+	cmp si, 0
+	je .show_current
+
+	; DATE arguments must use the form dd/mm/yyyy.
+	mov ax, si
+	call os_string_length
+	cmp ax, 10
+	jne .invalid_date
+	cmp byte [si+2], '/'
+	jne .invalid_date
+	cmp byte [si+5], '/'
+	jne .invalid_date
+
+	mov bx, 0
+.check_digits:
+	mov al, [si+bx]
+	cmp bx, 2
+	je .skip_separator
+	cmp bx, 5
+	je .skip_separator
+	cmp al, '0'
+	jb .invalid_date
+	cmp al, '9'
+	ja .invalid_date
+.skip_separator:
+	inc bx
+	cmp bx, 10
+	jb .check_digits
+
+	; A four-digit year is a leap year when it is divisible by four.
+	mov bx, 0
+	mov di, si
+	add di, 6
+	mov cx, 4
+.read_year_digit:
+	mov ax, bx
+	mov dx, 10
+	mul dx
+	mov bx, ax
+	xor ax, ax
+	mov al, [di]
+	sub al, '0'
+	add bx, ax
+	inc di
+	loop .read_year_digit
+	mov ax, bx
+	xor dx, dx
+	mov bx, 4
+	div bx
+	cmp dx, 0
+	je .leap_year
+
+	mov si, not_leap_msg
+	call os_print_string
+	jmp get_cmd
+
+.leap_year:
+	mov si, leap_msg
+	call os_print_string
+	jmp get_cmd
+
+.invalid_date:
+	mov si, invalid_date_msg
+	call os_print_string
+	jmp get_cmd
+
+.show_current:
 	mov bx, tmp_string
 	call os_get_date_string
 	mov si, bx
@@ -996,6 +1064,9 @@ exit:
 	writefail_msg		db 'Could not write file. Write protected or invalid filename?', 13, 10, 0
 	exists_msg		db 'Target file already exists!', 13, 10, 0
 	finished_msg		db '>>> Program finished, press any key to continue...', 0
+	leap_msg		db 'Leap year', 13, 10, 0
+	not_leap_msg		db 'Not a leap year', 13, 10, 0
+	invalid_date_msg	db 'Use DATE dd/mm/yyyy', 13, 10, 0
 
 	version_msg		db 'GMU-OS ', MIKEOS_VER, 13, 10, 0
 
