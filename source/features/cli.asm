@@ -955,7 +955,23 @@ exit:
 
 	prompt			db 'GMUOS-T3> ', 0
 
-	help_text		db 'Commands: DIR, LS, COPY, REN, DEL, CAT, SIZE, CLS, HELP, TIME, DATE, VER, EXIT', 13, 10, 0
+	help_text	db 13, 10, '              GMU-SHELL', 13, 10
+				db '========================================', 13, 10
+				db 'Command       | Description', 13, 10
+				db '--------------+-------------------------', 13, 10
+				db 'DIR           | List files in directory', 13, 10
+				db 'LS            | List files in directory', 13, 10
+				db 'COPY          | Copy a file', 13, 10
+				db 'REN           | Rename a file', 13, 10
+				db 'DEL           | Delete a file', 13, 10
+				db 'CAT           | Display a text file', 13, 10
+				db 'SIZE          | Show file size', 13, 10
+				db 'CLS           | Clear the screen', 13, 10
+				db 'HELP          | Show this command table', 13, 10
+				db 'TIME          | Show the current time', 13, 10
+				db 'DATE          | Show the current date', 13, 10
+				db 'VER           | Show GMU-OS version', 13, 10
+				db 'EXIT          | Leave the command shell', 13, 10, 13, 10, 0
 	invalid_msg		db 'No such command or program', 13, 10, 0
 	nofilename_msg		db 'No filename or not enough filenames', 13, 10, 0
 	notfound_msg		db 'File not found', 13, 10, 0
