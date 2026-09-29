@@ -98,6 +98,9 @@ get_cmd:				; Main processing loop
 	mov di, about_string
 	call os_string_compare
 	jc .about_help
+	mov di, pbl_string
+	call os_string_compare
+	jc .pbl_help
 	mov di, time_string
 	call os_string_compare
 	jc .time_help
@@ -142,6 +145,9 @@ get_cmd:				; Main processing loop
 .about_help:
 	mov si, about_help_text
 	jmp print_command_help
+.pbl_help:
+	mov si, pbl_help_text
+	jmp print_command_help
 .time_help:
 	mov si, time_help_text
 	jmp print_command_help
@@ -169,6 +175,10 @@ get_cmd:				; Main processing loop
 	mov di, about_string		; 'ABOUT' entered?
 	call os_string_compare
 	jc near print_about
+
+	mov di, pbl_string        ;'PBL' entered?
+	call os_string_compare
+	jc near print_pbl
 
 	mov di, cls_string		; 'CLS' entered?
 	call os_string_compare
@@ -363,6 +373,11 @@ print_command_help:
 
 print_about:
 	mov si, about_text
+	call os_print_string
+	jmp get_cmd
+
+print_pbl:
+	mov si, pbl_text
 	call os_print_string
 	jmp get_cmd
 
@@ -1158,6 +1173,7 @@ exit:
 				db 'CLS           | Clear the screen', 13, 10
 				db 'HELP          | Show this command table', 13, 10
 				db 'ABOUT         | Show GM University information', 13, 10
+				db 'PBL           | Show PBL information', 13, 10
 				db 'TIME          | Show the current time', 13, 10
 				db 'DATE          | Show the current date', 13, 10
 				db 'VER           | Show GMU-OS version', 13, 10
@@ -1171,6 +1187,7 @@ exit:
 	size_help_text	db 'SIZE: Show file size', 13, 10, 'eg: SIZE README.TXT', 13, 10, 0
 	cls_help_text	db 'CLS: Clear the screen', 13, 10, 'eg: CLS', 13, 10, 0
 	help_help_text	db 'HELP: Show the command table', 13, 10, 'eg: HELP', 13, 10, 0
+	pbl_help_text   db 'PBL: Tell about pbl details',13, 10, 'eg: PBL',13, 10, 0
 	about_help_text	db 'ABOUT: Show GM University information', 13, 10, 'eg: ABOUT', 13, 10, 0
 	time_help_text	db 'TIME: Show the current time', 13, 10, 'eg: TIME', 13, 10, 0
 	date_help_text	db 'DATE: Show the current date', 13, 10, 'eg: DATE', 13, 10, 0
@@ -1181,6 +1198,14 @@ exit:
 				db 'Welcome to GMU-OS - A hub for Academic progress', 13, 10
 				db 'and personal growth, cultivating innovation and', 13, 10
 				db 'futuristic-thinkers.', 13, 10, 13, 10, 0
+
+	pbl_text	db 13, 10, 'GMU-OS 0.1 - Educational x86 Operating System', 13, 10, 13, 10
+				db 'Designed for GM University B.Tech CSE students, this project', 13, 10
+				db 'blends assembly infrastructure with applications in C.', 13, 10, 13, 10
+				db 'Using the QEMU emulator for safe and repeatable testing,', 13, 10
+				db 'students learn core OS design by completing progressive,', 13, 10
+				db 'weekly milestones to build and modify the source code.', 13, 10, 13, 10, 0
+				
 	invalid_msg		db 'No such command or program', 13, 10, 0
 	nofilename_msg		db 'No filename or not enough filenames', 13, 10, 0
 	notfound_msg		db 'File not found', 13, 10, 0
@@ -1195,7 +1220,8 @@ exit:
 
 	exit_string		db 'EXIT', 0
 	help_string		db 'HELP', 0
-	about_string		db 'ABOUT', 0
+	about_string	db 'ABOUT', 0
+	pbl_string      db 'PBL', 0
 	cls_string		db 'CLS', 0
 	dir_string		db 'DIR', 0
 	time_string		db 'TIME', 0
