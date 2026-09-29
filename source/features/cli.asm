@@ -405,17 +405,17 @@ print_time:
 print_date:
 	mov si, [param_list]
 	cmp si, 0
-	je .show_current
+	je near .show_current
 
 	; DATE arguments must use the form dd/mm/yyyy.
 	mov ax, si
 	call os_string_length
 	cmp ax, 10
-	jne .invalid_date
+	jne near .invalid_date
 	cmp byte [si+2], '/'
-	jne .invalid_date
+	jne near .invalid_date
 	cmp byte [si+5], '/'
-	jne .invalid_date
+	jne near .invalid_date
 
 	mov bx, 0
 .check_digits:
@@ -425,15 +425,58 @@ print_date:
 	cmp bx, 5
 	je .skip_separator
 	cmp al, '0'
-	jb .invalid_date
+	jb near .invalid_date
 	cmp al, '9'
-	ja .invalid_date
+	ja near .invalid_date
 .skip_separator:
 	inc bx
 	cmp bx, 10
 	jb .check_digits
 
-	; A four-digit year is a leap year when it is divisible by four.
+	; Convert and validate the day.
+	mov bx, 0
+	mov di, si
+	mov cx, 2
+.read_day_digit:
+	mov ax, bx
+	mov dx, 10
+	mul dx
+	mov bx, ax
+	xor ax, ax
+	mov al, [di]
+	sub al, '0'
+	add bx, ax
+	inc di
+	loop .read_day_digit
+	mov [date_day], bx
+	cmp bx, 1
+	jb near .invalid_date
+	cmp bx, 31
+	ja near .invalid_date
+
+	; Convert and validate the month.
+	mov bx, 0
+	mov di, si
+	add di, 3
+	mov cx, 2
+.read_month_digit:
+	mov ax, bx
+	mov dx, 10
+	mul dx
+	mov bx, ax
+	xor ax, ax
+	mov al, [di]
+	sub al, '0'
+	add bx, ax
+	inc di
+	loop .read_month_digit
+	mov [date_month], bx
+	cmp bx, 1
+	jb near .invalid_date
+	cmp bx, 12
+	ja near .invalid_date
+
+	; Convert the four-digit year and reject year zero.
 	mov bx, 0
 	mov di, si
 	add di, 6
@@ -449,19 +492,74 @@ print_date:
 	add bx, ax
 	inc di
 	loop .read_year_digit
-	mov ax, bx
+	mov [date_year], bx
+	cmp bx, 0
+	je near .invalid_date
+
+	; Gregorian leap years are divisible by 400, or by 4 but not 100.
+	mov byte [date_is_leap], 0
+	mov ax, [date_year]
+	xor dx, dx
+	mov bx, 400
+	div bx
+	cmp dx, 0
+	je .mark_leap_year
+	mov ax, [date_year]
+	xor dx, dx
+	mov bx, 100
+	div bx
+	cmp dx, 0
+	je .check_month_length
+	mov ax, [date_year]
 	xor dx, dx
 	mov bx, 4
 	div bx
 	cmp dx, 0
-	je .leap_year
+	jne .check_month_length
 
-	mov si, not_leap_msg
+.mark_leap_year:
+	mov byte [date_is_leap], 1
+
+	; Select the month's maximum day, then reject impossible dates.
+.check_month_length:
+	mov bx, [date_month]
+	cmp bx, 2
+	je .february
+	cmp bx, 4
+	je .thirty_day_month
+	cmp bx, 6
+	je .thirty_day_month
+	cmp bx, 9
+	je .thirty_day_month
+	cmp bx, 11
+	je .thirty_day_month
+	mov bx, 31
+	jmp .check_max_day
+
+.thirty_day_month:
+	mov bx, 30
+	jmp .check_max_day
+
+.february:
+	mov bx, 28
+	cmp byte [date_is_leap], 0
+	je .check_max_day
+	mov bx, 29
+
+.check_max_day:
+	mov ax, [date_day]
+	cmp ax, bx
+	ja near .invalid_date
+	cmp byte [date_is_leap], 0
+	je .not_leap_year
+	
+	.leap_year:
+	mov si, leap_msg
 	call os_print_string
 	jmp get_cmd
 
-.leap_year:
-	mov si, leap_msg
+.not_leap_year:
+	mov si, not_leap_msg
 	call os_print_string
 	jmp get_cmd
 
@@ -1152,6 +1250,10 @@ exit:
 
 	file_size		dw 0
 	param_list		dw 0
+	date_day		dw 0
+	date_month		dw 0
+	date_year		dw 0
+	date_is_leap		db 0
 
 	bin_extension		db '.BIN', 0
 	bas_extension		db '.BAS', 0
@@ -1214,7 +1316,7 @@ exit:
 	finished_msg		db '>>> Program finished, press any key to continue...', 0
 	leap_msg		db 'Leap year', 13, 10, 0
 	not_leap_msg		db 'Not a leap year', 13, 10, 0
-	invalid_date_msg	db 'Use DATE dd/mm/yyyy', 13, 10, 0
+	invalid_date_msg	db 'Invalid date. Use DATE dd/mm/yyyy', 13, 10, 0
 
 	version_msg		db 'GMU-OS ', MIKEOS_VER, 13, 10, 0
 

@@ -34,6 +34,7 @@ void gmu_main(void)
     gmu_newline();
     gmu_print("Load offset : 0x8000");
     gmu_newline();
+    
 }
 
 GMU_C_ENTRY(gmu_main)

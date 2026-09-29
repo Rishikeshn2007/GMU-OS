@@ -228,7 +228,7 @@ In the current implementation, the help suffix must be attached directly to the 
 | `CLS` | Clears the display. |
 | `HELP` | Prints the command summary table shown at shell startup. |
 | `ABOUT`, `PBL` | Print the GMU-OS welcome/about text or project-based-learning information, respectively. |
-| `TIME`, `DATE` | Print the current time/date. `DATE` can also accept `dd/mm/yyyy`; the current source checks whether the year is divisible by four and reports leap year or not. |
+| `TIME`, `DATE` | Print the current time/date. `DATE` can also accept `dd/mm/yyyy`; it validates the calendar date (including month lengths and Gregorian leap-year rules) before reporting whether the year is a leap year. |
 | `VER` | Prints the GMU-OS version string. |
 | `EXIT` | Returns from the CLI routine to the kernel. |
 
