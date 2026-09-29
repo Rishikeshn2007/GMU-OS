@@ -88,8 +88,10 @@ static inline gmu_u16 gmu_wait_key(void)
     __attribute__((naked, section(".text.start"), used)) \
     void _start(void) { \
         __asm__ volatile ( \
+            "movw %sp, %bx\n\t" \
             "movl $0x0000fff0, %esp\n\t" \
             "calll " #main_function "\n\t" \
+            "movw %bx, %sp\n\t" \
             "retw\n\t" \
         ); \
     }

@@ -34,9 +34,6 @@ void gmu_main(void)
     gmu_newline();
     gmu_print("Load offset : 0x8000");
     gmu_newline();
-    gmu_print("Press any key to return...");
-    gmu_newline();
-    (void)gmu_wait_key();
 }
 
 GMU_C_ENTRY(gmu_main)
