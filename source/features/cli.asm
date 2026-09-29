@@ -64,6 +64,10 @@ get_cmd:				; Main processing loop
 	call os_string_compare
 	jc near print_help
 
+	mov di, about_string		; 'ABOUT' entered?
+	call os_string_compare
+	jc near print_about
+
 	mov di, cls_string		; 'CLS' entered?
 	call os_string_compare
 	jc near clear_screen
@@ -242,6 +246,14 @@ no_kernel_allowed:
 
 print_help:
 	mov si, help_text
+	call os_print_string
+	jmp get_cmd
+
+
+; ------------------------------------------------------------------
+
+print_about:
+	mov si, about_text
 	call os_print_string
 	jmp get_cmd
 
@@ -968,10 +980,16 @@ exit:
 				db 'SIZE          | Show file size', 13, 10
 				db 'CLS           | Clear the screen', 13, 10
 				db 'HELP          | Show this command table', 13, 10
+				db 'ABOUT         | Show GM University information', 13, 10
 				db 'TIME          | Show the current time', 13, 10
 				db 'DATE          | Show the current date', 13, 10
 				db 'VER           | Show GMU-OS version', 13, 10
 				db 'EXIT          | Leave the command shell', 13, 10, 13, 10, 0
+	about_text	db 13, 10, 'GMU-OS', 13, 10, 13, 10
+				db 'Igniting Innovation, Inspiring Transformation ...', 13, 10, 13, 10
+				db 'Welcome to GMU-OS - A hub for Academic progress', 13, 10
+				db 'and personal growth, cultivating innovation and', 13, 10
+				db 'futuristic-thinkers.', 13, 10, 13, 10, 0
 	invalid_msg		db 'No such command or program', 13, 10, 0
 	nofilename_msg		db 'No filename or not enough filenames', 13, 10, 0
 	notfound_msg		db 'File not found', 13, 10, 0
@@ -983,6 +1001,7 @@ exit:
 
 	exit_string		db 'EXIT', 0
 	help_string		db 'HELP', 0
+	about_string		db 'ABOUT', 0
 	cls_string		db 'CLS', 0
 	dir_string		db 'DIR', 0
 	time_string		db 'TIME', 0
