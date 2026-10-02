@@ -357,6 +357,8 @@ no_kernel_allowed:
 ; ------------------------------------------------------------------
 
 print_help:
+	cmp word [param_list], 0
+	jne near total_fail
 	mov si, help_text
 	call os_print_string
 	jmp get_cmd
@@ -365,6 +367,8 @@ print_help:
 ; ------------------------------------------------------------------
 
 print_command_help:
+	cmp word [param_list], 0
+	jne near total_fail
 	call os_print_string
 	jmp get_cmd
 
@@ -372,11 +376,15 @@ print_command_help:
 ; ------------------------------------------------------------------
 
 print_about:
+	cmp word [param_list], 0
+	jne near total_fail
 	mov si, about_text
 	call os_print_string
 	jmp get_cmd
 
 print_pbl:
+	cmp word [param_list], 0
+	jne near total_fail
 	mov si, pbl_text
 	call os_print_string
 	jmp get_cmd
@@ -385,6 +393,8 @@ print_pbl:
 ; ------------------------------------------------------------------
 
 clear_screen:
+	cmp word [param_list], 0
+	jne near total_fail
 	call os_clear_screen
 	jmp get_cmd
 
@@ -392,6 +402,8 @@ clear_screen:
 ; ------------------------------------------------------------------
 
 print_time:
+	cmp word [param_list], 0
+	jne near total_fail
 	mov bx, tmp_string
 	call os_get_time_string
 	mov si, bx
@@ -580,6 +592,8 @@ print_date:
 ; ------------------------------------------------------------------
 
 print_ver:
+	cmp word [param_list], 0
+	jne near total_fail
 	mov si, version_msg
 	call os_print_string
 	jmp get_cmd
@@ -596,6 +610,9 @@ kern_warning:
 ; ------------------------------------------------------------------
 
 list_directory:
+	cmp word [param_list], 0
+	jne near total_fail
+
 	mov cx,	0			; Counter
 
 	mov ax, dirlist			; Get list of files on disk
@@ -866,6 +883,9 @@ ren_file:
 ParaPerEntry	equ 2			; 32 bytes/entry => 2 paragraphs
 
 dir_list:
+	cmp word [param_list], 0
+	jne near total_fail
+
 	push es
 	pusha
 
@@ -1237,6 +1257,8 @@ type_name:
 ; =====================================================================
 
 exit:
+	cmp word [param_list], 0
+	jne near total_fail
 	ret
 
 
