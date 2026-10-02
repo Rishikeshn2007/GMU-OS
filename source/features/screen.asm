@@ -29,6 +29,71 @@ os_print_string:
 
 
 ; ------------------------------------------------------------------
+; os_print_string_colour -- Displays text in a given colour
+; IN: SI = message location (zero-terminated string), BL = colour attribute
+;     Colour byte: bits 0-3 = foreground, bits 4-6 = background, bit 7 = blink
+;     Common values: 07h white, 0Ah bright green, 0Ch bright red, 0Eh bright yellow
+; OUT: Nothing (registers preserved)
+
+os_print_string_colour:
+	pusha
+
+	mov bh, 0			; Page 0
+
+.colour_repeat:
+	lodsb				; Get next character
+	cmp al, 0
+	je .colour_done			; Zero terminator = end
+
+	cmp al, 13			; Carriage return - handle via teletype
+	je .colour_tty
+	cmp al, 10			; Line feed - handle via teletype
+	je .colour_tty
+
+	push ax
+	push bx
+	mov ah, 3			; Get cursor position
+	int 10h				; DH=row, DL=col
+	pop bx
+	pop ax
+
+	push bx
+	push dx
+	mov ah, 09h			; Write char + attribute at cursor
+	mov bh, 0
+	mov cx, 1			; One character
+	int 10h
+
+	pop dx
+	pop bx
+
+	inc dl				; Advance cursor column manually
+	cmp dl, 80
+	jl .advance_done
+	mov dl, 0
+	inc dh
+.advance_done:
+	push bx
+	mov bh, 0
+	mov ah, 2			; Set cursor position
+	int 10h
+	pop bx
+	jmp .colour_repeat
+
+.colour_tty:
+	push bx
+	mov ah, 0Eh
+	mov bh, 0
+	int 10h
+	pop bx
+	jmp .colour_repeat
+
+.colour_done:
+	popa
+	ret
+
+
+; ------------------------------------------------------------------
 ; os_clear_screen -- Clears the screen to background
 ; IN/OUT: Nothing (registers preserved)
 

@@ -11,7 +11,8 @@ os_command_line:
 	call os_clear_screen
 
 	mov si, version_msg
-	call os_print_string
+	mov bl, 0Eh			; Bright yellow for version
+	call os_print_string_colour
 	call print_help_table
 
 
@@ -21,7 +22,8 @@ get_cmd:				; Main processing loop
 	rep stosb
 
 	mov si, prompt			; Main loop; prompt for input
-	call os_print_string
+	mov bl, 0Ah			; Bright green for prompt
+	call os_print_string_colour
 
 	mov ax, input			; Get command string from user
 	mov bx, 64
@@ -341,14 +343,16 @@ try_bas_ext:
 
 total_fail:
 	mov si, invalid_msg
-	call os_print_string
+	mov bl, 0Ch			; Bright red for error
+	call os_print_string_colour
 
 	jmp get_cmd
 
 
 no_kernel_allowed:
 	mov si, kern_warn_msg
-	call os_print_string
+	mov bl, 0Ch			; Bright red for error
+	call os_print_string_colour
 
 	jmp get_cmd
 
@@ -365,7 +369,8 @@ print_help_table:
 	pusha
 
 	mov si, help_header
-	call os_print_string
+	mov bl, 0Eh			; Bright yellow for header
+	call os_print_string_colour
 
 	mov word [.cmd_ptr], help_cmd_list
 
@@ -655,7 +660,8 @@ print_date:
 
 .invalid_date:
 	mov si, invalid_date_msg
-	call os_print_string
+	mov bl, 0Ch			; Bright red for error
+	call os_print_string_colour
 	jmp get_cmd
 
 .show_current:
@@ -673,7 +679,8 @@ print_ver:
 	cmp word [param_list], 0
 	jne near total_fail
 	mov si, version_msg
-	call os_print_string
+	mov bl, 0Eh			; Bright yellow for version
+	call os_print_string_colour
 	jmp get_cmd
 
 
