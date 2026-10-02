@@ -12,8 +12,7 @@ os_command_line:
 
 	mov si, version_msg
 	call os_print_string
-	mov si, help_text
-	call os_print_string
+	call print_help_table
 
 
 get_cmd:				; Main processing loop
@@ -359,9 +358,88 @@ no_kernel_allowed:
 print_help:
 	cmp word [param_list], 0
 	jne near total_fail
-	mov si, help_text
-	call os_print_string
+	call print_help_table
 	jmp get_cmd
+
+print_help_table:
+	pusha
+
+	mov si, help_header
+	call os_print_string
+
+	mov word [.cmd_ptr], help_cmd_list
+
+.next_cmd:
+	mov di, word [.cmd_ptr]
+	mov si, [di]
+	cmp si, 0
+	je .all_done
+
+	xor cx, cx			; Count command name characters
+
+.print_name:
+	lodsb
+	cmp al, ':'
+	je .pad_spaces
+	cmp al, 0
+	je .line_done
+	mov ah, 0Eh
+	mov bh, 0
+	int 10h
+	inc cx
+	jmp .print_name
+
+.pad_spaces:
+	cmp cx, 14
+	jae .print_bar
+	mov al, ' '
+	mov ah, 0Eh
+	mov bh, 0
+	int 10h
+	inc cx
+	jmp .pad_spaces
+
+.print_bar:
+	mov al, '|'
+	mov ah, 0Eh
+	mov bh, 0
+	int 10h
+	mov al, ' '
+	int 10h
+
+.skip_space:
+	lodsb
+	cmp al, ' '
+	je .skip_space
+	dec si
+
+.print_desc:
+	lodsb
+	cmp al, 13			; CR
+	je .desc_done
+	cmp al, 10			; LF
+	je .desc_done
+	cmp al, 0			; null terminator
+	je .desc_done
+	mov ah, 0Eh
+	mov bh, 0
+	int 10h
+	jmp .print_desc
+
+.desc_done:
+	call os_print_newline
+
+.line_done:
+	add word [.cmd_ptr], 2
+	jmp .next_cmd
+
+.all_done:
+	call os_print_newline
+	popa
+	ret
+
+	.cmd_ptr	dw 0
+
 
 
 ; ------------------------------------------------------------------
@@ -1283,25 +1361,30 @@ exit:
 
 	prompt			db 'GMUOS-T3> ', 0
 
-	help_text	db 13, 10, '              GMU-SHELL', 13, 10
+	help_text:
+	help_header	db 13, 10, '              GMU-SHELL', 13, 10
 				db '========================================', 13, 10
 				db 'Command       | Description', 13, 10
-				db '--------------+-------------------------', 13, 10
-				db 'DIR           | List files in directory', 13, 10
-				db 'LS            | List files in directory', 13, 10
-				db 'COPY          | Copy a file', 13, 10
-				db 'REN           | Rename a file', 13, 10
-				db 'DEL           | Delete a file', 13, 10
-				db 'CAT           | Display a text file', 13, 10
-				db 'SIZE          | Show file size', 13, 10
-				db 'CLS           | Clear the screen', 13, 10
-				db 'HELP          | Show this command table', 13, 10
-				db 'ABOUT         | Show GM University information', 13, 10
-				db 'PBL           | Show PBL information', 13, 10
-				db 'TIME          | Show the current time', 13, 10
-				db 'DATE          | Show the current date', 13, 10
-				db 'VER           | Show GMU-OS version', 13, 10
-				db 'EXIT          | Leave the command shell', 13, 10, 13, 10, 0
+				db '--------------+-------------------------', 13, 10, 0
+
+	help_cmd_list:
+		dw dir_help_text
+		dw ls_help_text
+		dw copy_help_text
+		dw ren_help_text
+		dw del_help_text
+		dw cat_help_text
+		dw size_help_text
+		dw cls_help_text
+		dw help_help_text
+		dw about_help_text
+		dw pbl_help_text
+		dw time_help_text
+		dw date_help_text
+		dw ver_help_text
+		dw exit_help_text
+		dw 0
+
 	dir_help_text	db 'DIR: List files in directory', 13, 10, 'eg: DIR', 13, 10, 0
 	ls_help_text	db 'LS: List files in directory', 13, 10, 'eg: LS', 13, 10, 0
 	copy_help_text	db 'COPY: Copy a file', 13, 10, 'eg: COPY SOURCE.TXT DEST.TXT', 13, 10, 0
