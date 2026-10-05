@@ -1,5 +1,5 @@
 # GMU-OS
 qemu-system-i386 \
-  -audiodev pipewire,id=spk \
-  -machine pc,pcspk-audiodev=spk \
-  -fda disk_images/gmuos.flp
+  -drive file=disk_images/gmuos.flp,format=raw,if=floppy \
+  -audiodev pa,id=spk \
+  -machine pc,pcspk-audiodev=spk

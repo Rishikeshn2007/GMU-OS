@@ -695,10 +695,13 @@ kern_warning:
 ; ------------------------------------------------------------------
 
 list_directory:
-	cmp word [param_list], 0
-	jne near total_fail
+	; Check if a parameter was given (e.g. DIR *.BIN)
+	mov si, word [param_list]
+	cmp si, 0
+	jne .has_filter			; parameter present -> use extension filter
 
-	mov cx,	0			; Counter
+	; --- No filter: show all files in column layout ---
+	mov cx, 0			; Counter
 
 	mov ax, dirlist			; Get list of files on disk
 	call os_get_file_list
@@ -745,6 +748,201 @@ list_directory:
 .done:
 	call os_print_newline
 	jmp get_cmd
+
+
+; ------------------------------------------------------------------
+; list_directory filter mode: DIR *.EXT  or  DIR FILENAME.EXT
+; ------------------------------------------------------------------
+.has_filter:
+	; Uppercase the whole parameter in-place so comparisons work
+	mov ax, si
+	call os_string_uppercase
+
+	; Accept both *.EXT and .*.EXT as extension-filter forms.
+	cmp byte [si], '*'
+	je .wildcard_star_prefix
+	cmp byte [si], '.'
+	jne .exact_search
+	cmp byte [si+1], '*'
+	jne .exact_search
+	cmp byte [si+2], '.'
+	jne near total_fail
+	add si, 3			; skip ".*."
+	jmp .wildcard_extension
+
+.wildcard_star_prefix:
+	cmp byte [si+1], '.'
+	jne near total_fail
+	add si, 2			; skip "*."
+	jmp .wildcard_extension
+
+; --- Wildcard mode: DIR *.EXT or DIR .*.EXT ---
+.wildcard_extension:
+	; Copy extension into dir_ext_filter
+	mov di, dir_ext_filter
+	mov cx, 4			; max 3 chars + null
+.copy_ext:
+	mov al, [si]
+	cmp al, 0
+	je .ext_done
+	stosb
+	inc si
+	loop .copy_ext
+.ext_done:
+	mov byte [di], 0		; null-terminate filter
+
+	; Load file list
+	mov ax, dirlist
+	mov bx, 1024
+	call os_get_file_list
+
+	; Scan list – use dir_match_count to count hits
+	mov word [dir_match_count], 0
+	mov si, dirlist
+	mov [dir_scan_ptr], si
+	mov cx, 0			; column counter
+
+.wc_loop:
+	mov si, [dir_scan_ptr]
+	cmp byte [si], 0
+	je .wc_done
+
+	; Copy token
+	mov di, dir_tmp_name
+.wc_copy_tok:
+	mov al, [si]
+	cmp al, ','
+	je .wc_tok_end
+	cmp al, 0
+	je .wc_tok_end
+	stosb
+	inc si
+	jmp .wc_copy_tok
+.wc_tok_end:
+	mov byte [di], 0
+	cmp byte [si], ','
+	jne .wc_after_comma
+	inc si
+.wc_after_comma:
+	mov [dir_scan_ptr], si
+
+	call dir_match_ext
+	jnc .wc_loop			; no match -> next
+
+	; First match: print header
+	cmp word [dir_match_count], 0
+	jne .wc_print_name
+	mov si, .filter_header
+	call os_print_string
+
+.wc_print_name:
+	inc word [dir_match_count]
+
+	; Column-format print (4 per row)
+	push si
+	push cx
+	call os_get_cursor_pos
+	mov ax, cx
+	and al, 0x03
+	mov bl, 20
+	mul bl
+	mov dl, al
+	call os_move_cursor
+	mov si, dir_tmp_name
+	mov ah, 0Eh
+.wc_print_char:
+	lodsb
+	cmp al, 0
+	je .wc_print_done
+	int 10h
+	jmp .wc_print_char
+.wc_print_done:
+	pop cx
+	pop si
+	inc cx
+	mov ax, cx
+	and ax, 03h
+	cmp ax, 0
+	jne .wc_loop
+	call os_print_newline
+	jmp .wc_loop
+
+.wc_done:
+	call os_print_newline
+	cmp word [dir_match_count], 0
+	jne .flt_end			; at least one match -> done
+	mov si, .no_files_msg
+	call os_print_string
+	jmp get_cmd
+
+; --- Exact filename search mode: DIR KERNEL.BIN ---
+.exact_search:
+	; si still points to the uppercased parameter
+	; Copy the exact filename into dir_tmp_name
+	mov di, dir_tmp_name
+	mov cx, 13			; max 8.3 filename = 12 chars + null
+.es_copy:
+	mov al, [si]
+	cmp al, 0
+	je .es_copy_done
+	stosb
+	inc si
+	loop .es_copy
+.es_copy_done:
+	mov byte [di], 0
+
+	; Get file list
+	mov ax, dirlist
+	mov bx, 1024
+	call os_get_file_list
+
+	; Scan the list for an exact match with dir_tmp_name
+	mov si, dirlist
+
+.es_loop:
+	cmp byte [si], 0
+	je .es_not_found		; end of list, no match
+
+	; Copy this token into dir_search_tmp
+	mov di, dir_search_tmp
+.es_copy_tok:
+	mov al, [si]
+	cmp al, ','
+	je .es_tok_end
+	cmp al, 0
+	je .es_tok_end
+	stosb
+	inc si
+	jmp .es_copy_tok
+.es_tok_end:
+	mov byte [di], 0
+	cmp byte [si], ','
+	jne .es_after_comma
+	inc si
+.es_after_comma:
+
+	; Compare dir_search_tmp with dir_tmp_name
+	call dir_exact_match
+	jnc .es_loop			; not this one -> next
+
+	; Found! Print header and the filename
+	mov si, .filter_header
+	call os_print_string
+	mov si, dir_tmp_name
+	call os_print_string
+	call os_print_newline
+	jmp get_cmd
+
+.es_not_found:
+	mov si, .no_files_msg
+	call os_print_string
+	jmp get_cmd
+
+.flt_end:
+	jmp get_cmd
+
+	.filter_header	db 13, 10, 'Matching files:', 13, 10, 0
+	.no_files_msg	db 13, 10, 'No files found', 13, 10, 0
 
 
 ; ------------------------------------------------------------------
@@ -1043,6 +1241,93 @@ dir_list:
 	.readfail_msg	db 'Unable to read disk directory', 0
 	.header_msg	db '    Name         attr         created          last write      first     bytes', 13, 10, 0
 	.footer_msg	db 'Press key for next page', 0
+
+
+; ------------------------------------------------------------------
+; dir_match_ext -- Test if filename in dir_tmp_name has an extension
+;                  that matches the string in dir_ext_filter.
+; IN:  dir_tmp_name  = null-terminated filename  (e.g. "HELLO.BIN")
+;      dir_ext_filter = null-terminated extension (e.g. "BIN")
+; OUT: carry set => extension matches, carry clear => no match
+; Preserves all registers.
+
+dir_match_ext:
+	pusha
+
+	; Find the dot separator in dir_tmp_name
+	mov si, dir_tmp_name
+.dme_find_dot:
+	mov al, [si]
+	cmp al, 0
+	je .dme_no_match		; no dot -> no extension -> no match
+	cmp al, '.'
+	je .dme_found_dot
+	inc si
+	jmp .dme_find_dot
+
+.dme_found_dot:
+	inc si				; SI points to the extension characters
+
+	; Compare extension with dir_ext_filter
+	mov di, dir_ext_filter
+.dme_cmp:
+	mov al, [si]
+	mov bl, [di]
+	cmp bl, 0			; filter exhausted?
+	je .dme_check_end
+	cmp al, 0			; filename extension exhausted before filter?
+	je .dme_no_match
+	cmp al, bl
+	jne .dme_no_match
+	inc si
+	inc di
+	jmp .dme_cmp
+
+.dme_check_end:
+	; Filter done; extension must also be done
+	cmp al, 0
+	jne .dme_no_match		; filename extension has extra chars -> no match
+
+.dme_match:
+	popa
+	stc
+	ret
+
+.dme_no_match:
+	popa
+	clc
+	ret
+
+
+; ------------------------------------------------------------------
+; dir_exact_match -- Test if dir_search_tmp == dir_tmp_name
+; IN:  dir_search_tmp = candidate token from file list (uppercased)
+;      dir_tmp_name   = target filename entered by user (uppercased)
+; OUT: carry set => exact match, carry clear => no match
+; Preserves all registers.
+
+dir_exact_match:
+	pusha
+	mov si, dir_search_tmp
+	mov di, dir_tmp_name
+.dem_cmp:
+	mov al, [si]
+	mov bl, [di]
+	cmp al, bl
+	jne .dem_no_match
+	cmp al, 0			; both 0 -> equal
+	je .dem_match
+	inc si
+	inc di
+	jmp .dem_cmp
+.dem_match:
+	popa
+	stc
+	ret
+.dem_no_match:
+	popa
+	clc
+	ret
 
 
 ; ---------------------------------------------------------------------
@@ -1366,6 +1651,12 @@ exit:
 	bas_extension		db '.BAS', 0
 	pcx_extension		db '.PCX', 0
 
+	dir_ext_filter		times 5 db 0	; extension filter for DIR *.EXT
+	dir_tmp_name		times 16 db 0	; temporary filename buffer
+	dir_search_tmp		times 16 db 0	; candidate token during exact search
+	dir_match_count		dw 0		; number of matches found
+	dir_scan_ptr		dw 0		; next filename while wildcard results are printed
+
 	prompt			db 'GMUOS-T3> ', 0
 
 	help_text:
@@ -1392,7 +1683,7 @@ exit:
 		dw exit_help_text
 		dw 0
 
-	dir_help_text	db 'DIR: List files in directory', 13, 10, 'eg: DIR', 13, 10, 0
+	dir_help_text	db 'DIR: List files or filter by extension', 13, 10, 'eg: DIR, DIR *.BIN, or DIR .*.BIN', 13, 10, 0
 	ls_help_text	db 'LS: List files in directory', 13, 10, 'eg: LS', 13, 10, 0
 	copy_help_text	db 'COPY: Copy a file', 13, 10, 'eg: COPY SOURCE.TXT DEST.TXT', 13, 10, 0
 	ren_help_text	db 'REN: Rename a file', 13, 10, 'eg: REN OLD.TXT NEW.TXT', 13, 10, 0
@@ -1453,4 +1744,3 @@ exit:
 
 
 ; ==================================================================
-
