@@ -18,7 +18,7 @@ typedef unsigned char  gmu_u8;
 typedef unsigned short gmu_u16;
 typedef unsigned int   gmu_u32;
 
-/* MikeOS API vector offsets (API v18). */
+/* MikeOS/GMU OS API vector offsets (API v19). */
 #define GMU_OS_PRINT_STRING   0x0003u
 #define GMU_OS_CLEAR_SCREEN   0x0009u
 #define GMU_OS_PRINT_NEWLINE  0x000Fu
@@ -29,6 +29,11 @@ typedef unsigned int   gmu_u32;
 #define GMU_OS_GET_TIME_STR   0x0054u
 #define GMU_OS_GET_DATE_STR   0x005Du
 #define GMU_OS_INPUT_STRING   0x0036u
+#define GMU_OS_GET_BOOT_DEVICE 0x00D5u
+#define GMU_OS_GET_MEMORY_SIZE 0x00D8u
+#define GMU_OS_GET_VIDEO_MODE  0x00DBu
+#define GMU_OS_GET_UPTIME      0x00DEu
+#define GMU_OS_BIOS_HARDWARE_FLAG 0x00E1u
 
 /* Convert a linked program-data pointer to the 16-bit offset used inside
  * the common MikeOS/GMU OS segment. Stack pointers use a different segment. */
@@ -79,6 +84,86 @@ static inline gmu_u16 gmu_wait_key(void)
         : "bx", "cx", "dx", "si", "di", "cc", "memory"
     );
     return key;
+}
+
+static inline gmu_u8 gmu_get_api_version(void)
+{
+    gmu_u16 version;
+    __asm__ volatile (
+        "movw $0x0057, %%bx\n\t"
+        "callw *%%bx"
+        : "=a" (version)
+        :
+        : "bx", "cx", "dx", "si", "di", "cc", "memory"
+    );
+    return (gmu_u8)version;
+}
+
+static inline gmu_u8 gmu_get_boot_device(void)
+{
+    gmu_u16 device;
+    __asm__ volatile (
+        "movw $0x00D5, %%bx\n\t"
+        "callw *%%bx"
+        : "=a" (device)
+        :
+        : "bx", "cx", "dx", "si", "di", "cc", "memory"
+    );
+    return (gmu_u8)device;
+}
+
+static inline gmu_u16 gmu_get_memory_size(void)
+{
+    gmu_u16 memory_kb;
+    __asm__ volatile (
+        "movw $0x00D8, %%bx\n\t"
+        "callw *%%bx"
+        : "=a" (memory_kb)
+        :
+        : "bx", "cx", "dx", "si", "di", "cc", "memory"
+    );
+    return memory_kb;
+}
+
+static inline gmu_u8 gmu_get_video_mode(void)
+{
+    gmu_u16 mode;
+    __asm__ volatile (
+        "movw $0x00DB, %%bx\n\t"
+        "callw *%%bx"
+        : "=a" (mode)
+        :
+        : "bx", "cx", "dx", "si", "di", "cc", "memory"
+    );
+    return (gmu_u8)mode;
+}
+
+/* Approximately 18.2 BIOS timer ticks elapse per second. */
+static inline gmu_u32 gmu_get_uptime(void)
+{
+    gmu_u32 ticks;
+    __asm__ volatile (
+        "movw $0x00DE, %%bx\n\t"
+        "callw *%%bx"
+        : "=a" (ticks)
+        :
+        : "bx", "cx", "dx", "si", "di", "cc", "memory"
+    );
+    return ticks;
+}
+
+/* BIOS INT 11h equipment-list word; see gmu_docs/C_DEVELOPMENT.md. */
+static inline gmu_u16 gmu_bios_hardware_flags(void)
+{
+    gmu_u16 flags;
+    __asm__ volatile (
+        "movw $0x00E1, %%bx\n\t"
+        "callw *%%bx"
+        : "=a" (flags)
+        :
+        : "bx", "cx", "dx", "si", "di", "cc", "memory"
+    );
+    return flags;
 }
 
 static inline void gmu_input_string(char *buffer, gmu_u16 max_length)

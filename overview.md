@@ -212,3 +212,91 @@ The main lesson is to distinguish **a kernel routine that provides a useful OS
 service** from **a complete modern OS mechanism**. GMU OS has kernel services
 and an application loader, but deliberately does not implement protected
 processes, concurrency, or CPU scheduling.
+
+
+Search for `0x8000|32768|load_position|os_load_file|exec|program`
+
+Read , lines 1 to 100
+Completed with input: {
+  "path": "c:\\Users\\Rishikesh N\\Desktop\\sem-3\\PBL\\OS-PBL\\overview.md",
+  "view_range": [
+    1,
+    100
+  ]
+}
+
+Read , lines 1 to 45
+Completed with input: {
+  "path": "c:\\Users\\Rishikesh N\\Desktop\\sem-3\\PBL\\OS-PBL\\source\\kernel.asm",
+  "view_range": [
+    1,
+    45
+  ]
+}
+
+Read , lines 245 to 285
+Completed with input: {
+  "path": "c:\\Users\\Rishikesh N\\Desktop\\sem-3\\PBL\\OS-PBL\\source\\kernel.asm",
+  "view_range": [
+    245,
+    285
+  ]
+}
+
+Read , lines 255 to 330
+Completed with input: {
+  "path": "c:\\Users\\Rishikesh N\\Desktop\\sem-3\\PBL\\OS-PBL\\source\\features\\cli.asm",
+  "view_range": [
+    255,
+    330
+  ]
+}
+
+Read , lines 160 to 180
+Completed with input: {
+  "path": "c:\\Users\\Rishikesh N\\Desktop\\sem-3\\PBL\\OS-PBL\\source\\features\\disk.asm",
+  "view_range": [
+    160,
+    180
+  ]
+}
+
+Search for `mov ds|mov ss|mov sp|mov es`
+
+Read , lines 110 to 138
+Completed with input: {
+  "path": "c:\\Users\\Rishikesh N\\Desktop\\sem-3\\PBL\\OS-PBL\\source\\kernel.asm",
+  "view_range": [
+    110,
+    138
+  ]
+}
+
+In this OS, **processes don’t get separate RAM allocations**. It doesn’t support multitasking: it loads **one program at a time** into the same slot, runs it, and returns to the shell when it finishes.
+
+`0x8000` is an **offset**, not a physical address. The kernel sets its data segment to `0x2000`, so the program’s physical load address is:
+
+```text
+0x2000 × 16 + 0x8000 = 0x28000
+```
+
+The kernel’s intended layout within that 64 KB segment is:
+
+| Offset range | Purpose | Size |
+|---|---|---:|
+| `0x0000`–`0x5FFF` | Kernel code and data | 24 KB |
+| `0x6000`–`0x7FFF` | Disk buffer | 8 KB |
+| `0x8000`–`0xFFFF` | Program load area | 32 KB |
+
+So a program can use **up to about 32 KB** in that slot; its actual loaded bytes depend on the file. This is not a share of all installed RAM—just the memory area this OS reserves for programs. The kernel defines the disk buffer at offset 24 KB in `kernel.asm`, and the shell loads and calls programs at offset 32 KB in `cli.asm`. The `OS overview` also describes its real-mode memory model.
+
+A **disk buffer** is a temporary area in RAM where the OS stores data while reading from or writing to the disk. Here, it’s an 8 KB workspace used during disk operations—not memory assigned to a running program.
+
+GMU-OS is built to run from a **1.44 MB floppy disk image** (`disk_images/gmuos.flp`), not installed as a partition on your hard drive. The image contains the OS kernel and the programs/files bundled with it; the actual files take less than the image’s full 1.44 MB capacity.
+
+What if programs need more RAM and more disk space than 1.44 MB ?
+
+- **More disk space:** A 1.44 MB floppy image can’t hold more than that. You’d need to support a larger disk or image, and update the disk and filesystem code to use it. The OS currently uses floppy-style FAT12 routines.
+- **More RAM for a program:** The current layout gives a program a 32 KB load area. A larger program won’t fit there; the memory layout and loading code would need to change. Real mode also limits how memory is conveniently addressed.
+
+So, increasing the disk image size alone would give the OS more room for files, but **wouldn’t give a running program more RAM**.

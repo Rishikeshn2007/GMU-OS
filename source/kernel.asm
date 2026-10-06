@@ -16,7 +16,7 @@
 					; FS and GS require a 386 or better
 
 	%DEFINE MIKEOS_VER '4.7.0'	; OS version number
-	%DEFINE MIKEOS_API_VER 18	; API version for programs to check
+	%DEFINE MIKEOS_API_VER 19	; API version for programs to check
 
 	; GMU derivative identity (student-facing branding)
 	%DEFINE GMUOS_VER '0.1'
@@ -110,6 +110,11 @@ os_call_vectors:
 	jmp os_port_byte_in		; 00CCh
 	jmp os_string_tokenize		; 00CFh
 	jmp os_string_to_long_int	; 00D2h
+	jmp os_get_boot_device		; 00D5h -- AL = BIOS boot drive number
+	jmp os_get_memory_size		; 00D8h -- AX = conventional memory in KB
+	jmp os_get_video_mode		; 00DBh -- AL = current BIOS video mode
+	jmp os_get_uptime		; 00DEh -- EAX = elapsed BIOS ticks
+	jmp os_bios_hardware_flag	; 00E1h -- AX = BIOS equipment-list word
 
 
 ; ------------------------------------------------------------------
@@ -131,9 +136,9 @@ os_main:
 	mov fs, ax			; live entirely in 64K
 	mov gs, ax
 
+	mov [bootdev], dl		; Save BIOS boot drive for the API
 	cmp dl, 0
 	je no_change
-	mov [bootdev], dl		; Save boot device number
 	push es
 	mov ah, 8			; Get drive parameters
 	int 13h
@@ -145,6 +150,8 @@ os_main:
 	mov [Sides], dx
 
 no_change:
+	call os_init_uptime		; Start elapsed-tick counter from BIOS clock
+
 	mov ax, 1003h			; Set text output with certain attributes
 	mov bx, 0			; to be bright, and not blinking
 	int 10h
@@ -400,4 +407,3 @@ not_bas_extension:
 ; ==================================================================
 ; END OF KERNEL
 ; ==================================================================
-

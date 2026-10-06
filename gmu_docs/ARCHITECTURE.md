@@ -38,7 +38,9 @@ MikeOS loads a `.BIN` program at offset `0x8000` and invokes it with a 16-bit
 3. returns to the OS with a 16-bit `RET`.
 
 The same header also contains small wrappers that call selected MikeOS API
-vectors such as print-string, clear-screen and wait-for-key.
+vectors such as print-string, clear-screen, wait-for-key, and the system-info
+services for boot drive, conventional memory, video mode, uptime, and BIOS
+equipment flags.
 
 ## Important constraints
 
